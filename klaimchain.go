@@ -28,6 +28,7 @@ type Cert struct{
 
 type AnOpenCert struct{
 	Insuarer string `json:"insuarer_name"`					//user who created the Klaim
+	Dochash string `json:"doc_hash"`
 	Timestamp int64 `json:"timestamp"`			//utc timestamp of creation
 }
 
