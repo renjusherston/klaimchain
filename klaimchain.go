@@ -102,13 +102,10 @@ func (t *KlaimChaincode) Invoke(stub shim.ChaincodeStubInterface, function strin
 
 	// Handle different functions
 	if function == "init" {													//initialize the chaincode state, used as reset
-		return t.Init(stub, "init", args)
-	}  else if function == "write" {											//writes a value to the chaincode state
-		return t.Write(stub, args)
+		res, err := t.Init(stub, "init", args)
+		return res, err
 	} else if function == "init_cert" {									//create a new  klaim
-		return t.init_cert(stub, args)
-	} else if function == "set_user" {										//change owner of a klaim
-		res, err := t.set_user(stub, args)
+		res, err := t.init_cert(stub, args)
 		return res, err
 	}
 
@@ -159,7 +156,7 @@ func (t *KlaimChaincode) read(stub shim.ChaincodeStubInterface, args []string) (
 // Read all - read all matching variable from chaincode state
 // ============================================================================================================================
 func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	var name, kdate string
+	var name, kdate, jsonResp string
 	var err error
 
 	if len(args) != 1 {
@@ -178,61 +175,44 @@ func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string
 			return nil, errors.New("Failed to get klaim index")
 		}
 
-		var certIndex []string
-		json.Unmarshal(certsAsBytes, &certIndex)
 
-		
-		for i:= range certIndex{
 
-			certAsBytes, err := stub.GetState(certIndex[i])						//grab this cert
+		if len(kdate) <= 0 {
+			valAsbytes, err := stub.GetState(name)									//get the var from chaincode state
 			if err != nil {
-				return nil, errors.New("Failed to get Klaim")
-			}
-			res := Cert{}
-			json.Unmarshal(certAsBytes, &res)
-
-			if len(kdate) <= 0 {
-				if strings.ToLower(res.Insuarer) == strings.ToLower(name) && strings.ToLower(res.Klaimdate) == strings.ToLower(kdate){
-					return certAsBytes, nil
-				}
-			}else{
-				if strings.ToLower(res.Insuarer) == strings.ToLower(name) {
-					return certAsBytes, nil
-				}
+				jsonResp = "{\"Error\":\"Failed to get state for " + name + "\"}"
+				return nil, errors.New(jsonResp)
 			}
 
+			return valAsbytes, nil
+		}else{
+
+			var certIndex []string
+			json.Unmarshal(certsAsBytes, &certIndex)
+
+			for i:= range certIndex{
+
+				certAsBytes, err := stub.GetState(certIndex[i])						//grab this cert
+				if err != nil {
+					return nil, errors.New("Failed to get Klaim")
+				}
+				res := Cert{}
+				json.Unmarshal(certAsBytes, &res)
+
+				if len(kdate) <= 0 {
+					if strings.ToLower(res.Insuarer) == strings.ToLower(name) && strings.ToLower(res.Klaimdate) == strings.ToLower(kdate){
+						return certAsBytes, nil
+					}
+				}
+
+			}
 		}
-
-
 		if err != nil {
 			return nil, err
 		}
 
-		fmt.Println("- end find Klaim - error")
-
 		return nil, nil
 
-}
-
-// ============================================================================================================================
-// Write - write variable into chaincode state
-// ============================================================================================================================
-func (t *KlaimChaincode) Write(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	var name, value string // Entities
-	var err error
-	fmt.Println("running write()")
-
-	if len(args) != 2 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 2. name of the variable and value to set")
-	}
-
-	name = args[0]															//rename for funsies
-	value = args[1]
-	err = stub.PutState(name, []byte(value))								//write the variable into the chaincode state
-	if err != nil {
-		return nil, err
-	}
-	return nil, nil
 }
 
 // ============================================================================================================================
@@ -240,27 +220,29 @@ func (t *KlaimChaincode) Write(stub shim.ChaincodeStubInterface, args []string) 
 // ============================================================================================================================
 func (t *KlaimChaincode) init_cert(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
-
+  var jsonResp string
 
 	if len(args) != 4 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 6")
+		jsonResp = "{\"Error\":\"Missing arguments\"}"
+		return nil, errors.New(jsonResp)
 	}
 
-	//input sanitation
-	fmt.Println("- start init cert")
 	if len(args[0]) <= 0 {
-		return nil, errors.New("1st argument must be a non-empty string")
+		jsonResp = "{\"Error\":\"1st argument must be a non-empty string\"}"
+		return nil, errors.New(jsonResp)
 	}
 	if len(args[1]) <= 0 {
-		return nil, errors.New("2nd argument must be a non-empty string")
+		jsonResp = "{\"Error\":\"2nd argument must be a non-empty string\"}"
+		return nil, errors.New(jsonResp)
 	}
 	if len(args[2]) <= 0 {
-		return nil, errors.New("3rd argument must be a non-empty string")
+		jsonResp = "{\"Error\":\"3rd argument must be a non-empty string\"}"
+		return nil, errors.New(jsonResp)
 	}
 	if len(args[3]) <= 0 {
-		return nil, errors.New("4th argument must be a non-empty string")
+		jsonResp = "{\"Error\":\"4th argument must be a non-empty string\"}"
+		return nil, errors.New(jsonResp)
 	}
-
 
 	insuarer := strings.ToLower(args[0])
 	klaimdate := strings.ToLower(args[1])
@@ -268,18 +250,6 @@ func (t *KlaimChaincode) init_cert(stub shim.ChaincodeStubInterface, args []stri
 	dochash := strings.ToLower(args[3])
 
 
-	//check if cert already exists
-	certAsBytes, err := stub.GetState(dochash)
-	if err != nil {
-		return nil, errors.New("Failed to get klaim")
-	}
-	res := Cert{}
-	json.Unmarshal(certAsBytes, &res)
-	if strings.ToLower(res.Dochash) == dochash{
-		fmt.Println("This document arleady exists: " + dochash)
-		fmt.Println(res);
-		return nil, errors.New("This document arleady exists")				//all stop a cert by this name exists
-	}
 
 	//build the cert json string manually
 	str := `{"insuarer": "` + insuarer + `", "klaimdate": "` + klaimdate + `", "doctype": "` + doctype + `", "dochash": "` + dochash + `"}`
@@ -306,38 +276,6 @@ func (t *KlaimChaincode) init_cert(stub shim.ChaincodeStubInterface, args []stri
 	err = stub.PutState(certIndexStr, jsonAsBytes)						//store name of cert
 
 	fmt.Println("- end init cert")
-	return nil, nil
-}
-
-// ============================================================================================================================
-// Set User Permission on klaim
-// ============================================================================================================================
-func (t *KlaimChaincode) set_user(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	var err error
-
-	//   0       1
-	// "name", "renju"
-	if len(args) < 2 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 2")
-	}
-
-	fmt.Println("- start set user")
-	fmt.Println(args[0] + " - " + args[1])
-	certAsBytes, err := stub.GetState(args[0])
-	if err != nil {
-		return nil, errors.New("Failed to get thing")
-	}
-	res := Cert{}
-	json.Unmarshal(certAsBytes, &res)										//un stringify it aka JSON.parse()
-	res.Insuarer = args[1]														//change the user
-
-	jsonAsBytes, _ := json.Marshal(res)
-	err = stub.PutState(args[0], jsonAsBytes)								//rewrite the cert with id as key
-	if err != nil {
-		return nil, err
-	}
-
-	fmt.Println("- end set user")
 	return nil, nil
 }
 
