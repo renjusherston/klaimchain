@@ -126,56 +126,12 @@ func (t *KlaimChaincode) Query(stub shim.ChaincodeStubInterface, function string
 	// Handle different functions
 	if function == "read" {													//read a variable
 		return t.read(stub, args)
+	}else{
+		return t.readAll(stub, args)
 	}
 	fmt.Println("query did not find func: " + function)						//error
 
 	return nil, errors.New("Received unknown function query")
-
-/*
-	var err error
-
-	if len(args) < 1 {
-		return nil, errors.New("Incorrect number of arguments. Expecting at least 1")
-	}
-
-	//get the cert index
-	certsAsBytes, err := stub.GetState(certIndexStr)
-
-	if err != nil {
-		return nil, errors.New("Failed to get klaim index")
-	}
-
-	var certIndex []string
-	json.Unmarshal(certsAsBytes, &certIndex)
-
-	for i:= range certIndex{
-
-		certAsBytes, err := stub.GetState(certIndex[i])						//grab this cert
-		if err != nil {
-			return nil, errors.New("Failed to get Klaim")
-		}
-		res := Cert{}
-		json.Unmarshal(certAsBytes, &res)
-
-
-
-		//check for user && klaim
-		if strings.ToLower(res.Klaim) == strings.ToLower(args[0]) || strings.ToLower(res.User) == strings.ToLower(args[0]){
-			fmt.Println("found a Klaim issued by: " + res.Owner)
-			fmt.Println("! end find Klaim")
-
-			return certAsBytes, nil
-
-		}
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	fmt.Println("- end find Klaim - error")
-
-	return nil, nil
-	*/
 }
 
 // ============================================================================================================================
@@ -189,7 +145,7 @@ func (t *KlaimChaincode) read(stub shim.ChaincodeStubInterface, args []string) (
 		return nil, errors.New("Incorrect number of arguments. Expecting name of the var to query")
 	}
 
-	name = args[0]
+	name = strings.ToLower(args[0])
 	valAsbytes, err := stub.GetState(name)									//get the var from chaincode state
 	if err != nil {
 		jsonResp = "{\"Error\":\"Failed to get state for " + name + "\"}"
@@ -197,6 +153,65 @@ func (t *KlaimChaincode) read(stub shim.ChaincodeStubInterface, args []string) (
 	}
 
 	return valAsbytes, nil													//send it onward
+}
+
+// ============================================================================================================================
+// Read all - read all matching variable from chaincode state
+// ============================================================================================================================
+func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	var name, kdate string
+	var err error
+
+	if len(args) != 1 {
+		return nil, errors.New("Incorrect number of arguments. Expecting name of the var to query")
+	}
+
+	name = strings.ToLower(args[0])
+	kdate = strings.ToLower(args[1])
+
+//================================================
+
+		//get the cert index
+		certsAsBytes, err := stub.GetState(certIndexStr)
+
+		if err != nil {
+			return nil, errors.New("Failed to get klaim index")
+		}
+
+		var certIndex []string
+		json.Unmarshal(certsAsBytes, &certIndex)
+
+		
+		for i:= range certIndex{
+
+			certAsBytes, err := stub.GetState(certIndex[i])						//grab this cert
+			if err != nil {
+				return nil, errors.New("Failed to get Klaim")
+			}
+			res := Cert{}
+			json.Unmarshal(certAsBytes, &res)
+
+			if len(kdate) <= 0 {
+				if strings.ToLower(res.Insuarer) == strings.ToLower(name) && strings.ToLower(res.Klaimdate) == strings.ToLower(kdate){
+					return certAsBytes, nil
+				}
+			}else{
+				if strings.ToLower(res.Insuarer) == strings.ToLower(name) {
+					return certAsBytes, nil
+				}
+			}
+
+		}
+
+
+		if err != nil {
+			return nil, err
+		}
+
+		fmt.Println("- end find Klaim - error")
+
+		return nil, nil
+
 }
 
 // ============================================================================================================================
@@ -260,7 +275,7 @@ func (t *KlaimChaincode) init_cert(stub shim.ChaincodeStubInterface, args []stri
 	}
 	res := Cert{}
 	json.Unmarshal(certAsBytes, &res)
-	if res.Dochash == dochash{
+	if strings.ToLower(res.Dochash) == dochash{
 		fmt.Println("This document arleady exists: " + dochash)
 		fmt.Println(res);
 		return nil, errors.New("This document arleady exists")				//all stop a cert by this name exists
