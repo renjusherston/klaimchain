@@ -249,14 +249,6 @@ func (t *KlaimChaincode) init_cert(stub shim.ChaincodeStubInterface, args []stri
 	doctype := strings.ToLower(args[2])
 	dochash := strings.ToLower(args[3])
 
-	certAsBytes, err := stub.GetState(dochash)
-	if certAsBytes != nil {
-		fmt.Println("This document arleady exists: " + dochash)
-		return nil, errors.New("This document arleady exists")
-	}
-
-
-
 	//build the cert json string manually
 	str := `{"insuarer": "` + insuarer + `", "klaimdate": "` + klaimdate + `", "doctype": "` + doctype + `", "dochash": "` + dochash + `"}`
 	err = stub.PutState(insuarer, []byte(str))									//store cert with user name as key
