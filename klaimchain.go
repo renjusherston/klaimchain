@@ -42,7 +42,7 @@ type AllTransactions struct{
 func main() {
 	err := shim.Start(new(KlaimChaincode))
 	if err != nil {
-		fmt.Printf("Error starting Simple chaincode: %s", err)
+		fmt.Printf("Error starting chaincode: %s", err)
 	}
 }
 
@@ -248,6 +248,12 @@ func (t *KlaimChaincode) init_cert(stub shim.ChaincodeStubInterface, args []stri
 	klaimdate := strings.ToLower(args[1])
 	doctype := strings.ToLower(args[2])
 	dochash := strings.ToLower(args[3])
+
+	certAsBytes, err := stub.GetState(dochash)
+	if certAsBytes != nil {
+		fmt.Println("This document arleady exists: " + dochash)
+		return nil, errors.New("This document arleady exists")
+	}
 
 
 
