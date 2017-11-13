@@ -26,6 +26,10 @@ type Cert struct{
 	Dochash string `json:"doc_hash"`
 }
 
+type Everything struct {
+	Klaims []Cert  `json:"klaims"`
+}
+
 type AnOpenCert struct{
 	Insuarer string `json:"insuarer_name"`					//user who created the Klaim
 	Dochash string `json:"doc_hash"`
@@ -156,63 +160,45 @@ func (t *KlaimChaincode) read(stub shim.ChaincodeStubInterface, args []string) (
 // Read all - read all matching variable from chaincode state
 // ============================================================================================================================
 func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	var name, kdate, jsonResp string
-	var err error
+	var name, dt string
 
-	if len(args) != 1 {
-		return nil, errors.New("Incorrect number of arguments. Expecting name of the var to query")
+	var everything Everything
+	name = strings.ToLower(args[0])
+	dt = strings.ToLower(args[1])
+
+	// ---- Get All Records ---- //
+	resultsIterator, err := stub.RangeQueryState("m0", "m999999")
+	if err != nil {
+		return nil, errors.New("Received unknown function query")
+	}
+	defer resultsIterator.Close()
+
+	for resultsIterator.HasNext() {
+		aKey, aVal, err := resultsIterator.Next()
+		if err != nil {
+			return nil, errors.New("Received unknown function query")
+		}
+		queryKeyAsStr := aKey
+		queryValAsBytes := aVal
+
+		var klaim Cert
+		json.Unmarshal(queryValAsBytes, &klaim)                  //un stringify it aka JSON.parse()
+
+		if len(dt) <= 0 {
+		if(queryKeyAsStr == name){
+			everything.Klaims = append(everything.Klaims, klaim)
+		}
+		}else{
+			if(queryKeyAsStr == name && klaim.Klaimdate == dt){
+				everything.Klaims = append(everything.Klaims, klaim)
+			}
+		}
 	}
 
-	name = strings.ToLower(args[0])
-	kdate = strings.ToLower(args[1])
-
-//================================================
-
-		//get the cert index
-		certsAsBytes, err := stub.GetState(certIndexStr)
-
-		if err != nil {
-			return nil, errors.New("Failed to get klaim index")
-		}
-
-
-
-		if len(kdate) <= 0 {
-			valAsbytes, err := stub.GetState(name)									//get the var from chaincode state
-			if err != nil {
-				jsonResp = "{\"Error\":\"Failed to get state for " + name + "\"}"
-				return nil, errors.New(jsonResp)
-			}
-
-			return valAsbytes, nil
-		}else{
-
-			var certIndex []string
-			json.Unmarshal(certsAsBytes, &certIndex)
-
-			for i:= range certIndex{
-
-				certAsBytes, err := stub.GetState(certIndex[i])						//grab this cert
-				if err != nil {
-					return nil, errors.New("Failed to get Klaim")
-				}
-				res := Cert{}
-				json.Unmarshal(certAsBytes, &res)
-
-				if len(kdate) <= 0 {
-					if strings.ToLower(res.Insuarer) == strings.ToLower(name) && strings.ToLower(res.Klaimdate) == strings.ToLower(kdate){
-						return certAsBytes, nil
-					}
-				}
-
-			}
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		return nil, nil
-
+	//change to array of bytes
+	everythingAsBytes, _ := json.Marshal(everything)              //convert to array of bytes
+	return everythingAsBytes, nil
+	//return shim.Success(everythingAsBytes)
 }
 
 // ============================================================================================================================
