@@ -127,9 +127,10 @@ func (t *KlaimChaincode) Query(stub shim.ChaincodeStubInterface, function string
 	// Handle different functions
 	if function == "read" {													//read a variable
 		return t.read(stub, args)
-	}else{
+	} else if function == "readAll" {
 		return t.readAll(stub, args)
 	}
+
 	fmt.Println("query did not find func: " + function)						//error
 
 	return nil, errors.New("Received unknown function query")
@@ -162,9 +163,13 @@ func (t *KlaimChaincode) read(stub shim.ChaincodeStubInterface, args []string) (
 func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var name, dt string
 
+	if len(args) != 1 {
+		return nil, errors.New("Incorrect number of arguments. Expecting name of the var to query")
+	}
+
 	var everything Everything
 	name = strings.ToLower(args[0])
-	dt = strings.ToLower(args[1])
+	dt = args[1]
 
 	// ---- Get All Records ---- //
 	resultsIterator, err := stub.RangeQueryState("m0", "m999999")
