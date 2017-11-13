@@ -174,6 +174,9 @@ func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string
 		}
 		queryKeyAsStr := aKey
 		queryValAsBytes := aVal
+		
+		fmt.Println("on klaim id - ", queryKeyAsStr)
+		fmt.Println("on klaim value - ", queryValAsBytes)
 
 		var klaim Cert
 		json.Unmarshal(queryValAsBytes, &klaim)                  //un stringify it aka JSON.parse()
