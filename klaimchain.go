@@ -94,7 +94,6 @@ func (t *KlaimChaincode) Init(stub shim.ChaincodeStubInterface, function string,
 // Run - Our entry point for Invocations
 // ============================================================================================================================
 func (t *KlaimChaincode) Run(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	fmt.Println("run is running " + function)
 	return t.Invoke(stub, function, args)
 }
 
@@ -102,7 +101,6 @@ func (t *KlaimChaincode) Run(stub shim.ChaincodeStubInterface, function string, 
 // Invoke - Our entry point for Invocations
 // ============================================================================================================================
 func (t *KlaimChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	fmt.Println("invoke is running " + function)
 
 	// Handle different functions
 	if function == "init" {													//initialize the chaincode state, used as reset
@@ -113,8 +111,6 @@ func (t *KlaimChaincode) Invoke(stub shim.ChaincodeStubInterface, function strin
 		return res, err
 	}
 
-	fmt.Println("invoke did not find func: " + function)					//error
-
 	return nil, errors.New("Received unknown function invocation")
 }
 
@@ -122,7 +118,6 @@ func (t *KlaimChaincode) Invoke(stub shim.ChaincodeStubInterface, function strin
 // Query - Our entry point for Quering klaims
 // ============================================================================================================================
 func (t *KlaimChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	fmt.Println("query klaim is running " + function)
 
 	// Handle different functions
 	if function == "read" {													//read a variable
@@ -130,8 +125,6 @@ func (t *KlaimChaincode) Query(stub shim.ChaincodeStubInterface, function string
 	} else if function == "readAll" {
 		return t.readAll(stub, args)
 	}
-
-	fmt.Println("query did not find func: " + function)						//error
 
 	return nil, errors.New("Received unknown function query")
 }
@@ -203,7 +196,6 @@ func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string
 	//change to array of bytes
 	everythingAsBytes, _ := json.Marshal(everything)              //convert to array of bytes
 	return everythingAsBytes, nil
-	//return shim.Success(everythingAsBytes)
 }
 
 // ============================================================================================================================
@@ -211,29 +203,6 @@ func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string
 // ============================================================================================================================
 func (t *KlaimChaincode) init_cert(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
-  var jsonResp string
-
-	if len(args) != 4 {
-		jsonResp = "{\"Error\":\"Missing arguments\"}"
-		return nil, errors.New(jsonResp)
-	}
-
-	if len(args[0]) <= 0 {
-		jsonResp = "{\"Error\":\"1st argument must be a non-empty string\"}"
-		return nil, errors.New(jsonResp)
-	}
-	if len(args[1]) <= 0 {
-		jsonResp = "{\"Error\":\"2nd argument must be a non-empty string\"}"
-		return nil, errors.New(jsonResp)
-	}
-	if len(args[2]) <= 0 {
-		jsonResp = "{\"Error\":\"3rd argument must be a non-empty string\"}"
-		return nil, errors.New(jsonResp)
-	}
-	if len(args[3]) <= 0 {
-		jsonResp = "{\"Error\":\"4th argument must be a non-empty string\"}"
-		return nil, errors.New(jsonResp)
-	}
 
 	insuarer := strings.ToLower(args[0])
 	klaimdate := strings.ToLower(args[1])
@@ -260,11 +229,8 @@ func (t *KlaimChaincode) init_cert(stub shim.ChaincodeStubInterface, args []stri
 
 	//append
 	certIndex = append(certIndex, insuarer)									//add cert name to index list
-	fmt.Println("! cert index: ", certIndex)
 	jsonAsBytes, _ := json.Marshal(certIndex)
 	err = stub.PutState(certIndexStr, jsonAsBytes)						//store name of cert
-
-	fmt.Println("- end init cert")
 	return nil, nil
 }
 
