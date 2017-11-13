@@ -156,10 +156,6 @@ func (t *KlaimChaincode) read(stub shim.ChaincodeStubInterface, args []string) (
 func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var name, dt string
 
-	if len(args) != 1 {
-		return nil, errors.New("Incorrect number of arguments. Expecting name of the var to query")
-	}
-
 	var everything Everything
 	name = strings.ToLower(args[0])
 	dt = args[1]
