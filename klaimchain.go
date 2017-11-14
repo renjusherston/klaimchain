@@ -154,7 +154,7 @@ func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string
 
 	name = strings.ToLower(args[0])
 
-	keysIter, err := stub.RangeQueryState("", "")
+	keysIter, err := stub.RangeQueryState("m0", "m99999999")
 		if err != nil {
 			return nil, fmt.Errorf("keys operation failed. Error accessing state: %s", err)
 		}
