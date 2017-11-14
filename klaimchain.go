@@ -171,11 +171,11 @@ func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string
 				return nil, fmt.Errorf("keys operation failed. Error accessing state: %s", err)
 			}
 
-			var klaim string
+			var klaim Cert
 			json.Unmarshal(vals, &klaim)
 
 				if(name == key){
-					keys = append(keys, klaim)
+					keys = append(keys, klaim.Insuarer+","+klaim.Klaimdate+","+klaim.Doctype+","+klaim.Dochash)
 				}
 
 		}
