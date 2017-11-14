@@ -203,26 +203,17 @@ func (t *KlaimChaincode) init_cert(stub shim.ChaincodeStubInterface, args []stri
 
 	//build the cert json string manually
 	str := `{"insuarer": "` + insuarer + `", "klaimdate": "` + klaimdate + `", "doctype": "` + doctype + `", "dochash": "` + dochash + `"}`
-	err = stub.PutState(insuarer, []byte(str))									//store cert with user name as key
 
+	err = stub.PutState(insuarer, []byte(str))									//store cert with user name as key
 	if err != nil {
 		return nil, err
 	}
 
   err = stub.PutState(dochash, []byte(str))									//store  with cert as key
-
-	//get the cert index
-	certsAsBytes, err := stub.GetState(certIndexStr)
 	if err != nil {
-		return nil, errors.New("Failed to get klaim index")
+		return nil, err
 	}
-	var certIndex []string
-	json.Unmarshal(certsAsBytes, &certIndex)							// JSON.parse()
 
-	//append
-	certIndex = append(certIndex, insuarer)									//add cert name to index list
-	jsonAsBytes, _ := json.Marshal(certIndex)
-	err = stub.PutState(certIndexStr, jsonAsBytes)						//store name of cert
 	return nil, nil
 }
 
