@@ -154,47 +154,34 @@ func (t *KlaimChaincode) read(stub shim.ChaincodeStubInterface, args []string) (
 // Read all - read all matching variable from chaincode state
 // ============================================================================================================================
 func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	var name, dt string
+	//var name, dt string
 
-	var everything Everything
-	name = strings.ToLower(args[0])
-	dt = args[1]
+	//name = strings.ToLower(args[0])
+	//dt = args[1]
 
-	// ---- Get All Records ---- //
-	resultsIterator, err := stub.RangeQueryState("m0", "m999999")
-	if err != nil {
-		return nil, errors.New("Received unknown function query")
-	}
-	defer resultsIterator.Close()
-
-	for resultsIterator.HasNext() {
-		aKey, aVal, err := resultsIterator.Next()
+	keysIter, err := stub.RangeQueryState("", "")
 		if err != nil {
-			return nil, errors.New("Received unknown function query")
+			return nil, fmt.Errorf("keys operation failed. Error accessing state: %s", err)
 		}
-		queryKeyAsStr := aKey
-		queryValAsBytes := aVal
-		
-		fmt.Println("on klaim id - ", queryKeyAsStr)
-		fmt.Println("on klaim value - ", queryValAsBytes)
+		defer keysIter.Close()
 
-		var klaim Cert
-		json.Unmarshal(queryValAsBytes, &klaim)                  //un stringify it aka JSON.parse()
-
-		if len(dt) <= 0 {
-		if(queryKeyAsStr == name){
-			everything.Klaims = append(everything.Klaims, klaim)
-		}
-		}else{
-			if(queryKeyAsStr == name && klaim.Klaimdate == dt){
-				everything.Klaims = append(everything.Klaims, klaim)
+		var keys []string
+		for keysIter.HasNext() {
+			key, _, iterErr := keysIter.Next()
+			if iterErr != nil {
+				return nil, fmt.Errorf("keys operation failed. Error accessing state: %s", err)
 			}
+			keys = append(keys, key)
 		}
-	}
 
-	//change to array of bytes
-	everythingAsBytes, _ := json.Marshal(everything)              //convert to array of bytes
-	return everythingAsBytes, nil
+		jsonKeys, err := json.Marshal(keys)
+		if err != nil {
+			return nil, fmt.Errorf("keys operation failed. Error marshaling JSON: %s", err)
+		}
+
+		return jsonKeys, nil
+
+
 }
 
 // ============================================================================================================================
