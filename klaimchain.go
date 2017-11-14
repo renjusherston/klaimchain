@@ -20,14 +20,10 @@ var certIndexStr = "_certindex"				//name for the key/value that will store a li
 var opentransStr = "_opentrans"				//name for the key/value that will store all klaims
 
 type Cert struct{
-	Insuarer string `json:"insuarer_name"`					//the fieldtags are needed to keep track klaim
-	Klaimdate string `json:"klaim_date"`
-	Doctype string `json:"doc_type"`
-	Dochash string `json:"doc_hash"`
-}
-
-type Everything struct {
-	Klaims []Cert  `json:"klaims"`
+	Insuarer string `json:"insuarer"`					//the fieldtags are needed to keep track klaim
+	Klaimdate string `json:"klaimdate"`
+	Doctype string `json:"doctype"`
+	Dochash string `json:"dochash"`
 }
 
 type AnOpenCert struct{
@@ -154,10 +150,10 @@ func (t *KlaimChaincode) read(stub shim.ChaincodeStubInterface, args []string) (
 // Read all - read all matching variable from chaincode state
 // ============================================================================================================================
 func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	//var name, dt string
+	var name, dt string
 
-	//name = strings.ToLower(args[0])
-	//dt = args[1]
+	name = strings.ToLower(args[0])
+	dt = strings.ToLower(args[1])
 
 	keysIter, err := stub.RangeQueryState("", "")
 		if err != nil {
@@ -171,7 +167,25 @@ func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string
 			if iterErr != nil {
 				return nil, fmt.Errorf("keys operation failed. Error accessing state: %s", err)
 			}
-			keys = append(keys, key)
+			vals, err := stub.GetState(key)
+			if err != nil {
+				
+			}
+
+			var klaim Cert
+			json.Unmarshal(vals, &klaim)
+
+			if(dt != ""){
+				if(name == key && klaim.Klaimdate == dt){
+					keys = append(keys, klaim.Insuarer+"-"+klaim.Klaimdate+"-"+klaim.Doctype+"-"+klaim.Dochash)
+				}
+			}else{
+				if(name == key){
+					keys = append(keys, klaim.Insuarer+"-"+klaim.Klaimdate+"-"+klaim.Doctype+"-"+klaim.Dochash)
+				}
+			}
+
+
 		}
 
 		jsonKeys, err := json.Marshal(keys)
