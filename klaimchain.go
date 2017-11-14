@@ -150,10 +150,9 @@ func (t *KlaimChaincode) read(stub shim.ChaincodeStubInterface, args []string) (
 // Read all - read all matching variable from chaincode state
 // ============================================================================================================================
 func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	var name, dt string
+	var name string
 
 	name = strings.ToLower(args[0])
-	dt = strings.ToLower(args[1])
 
 	keysIter, err := stub.RangeQueryState("", "")
 		if err != nil {
@@ -169,22 +168,15 @@ func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string
 			}
 			vals, err := stub.GetState(key)
 			if err != nil {
-				
+				return nil, fmt.Errorf("keys operation failed. Error accessing state: %s", err)
 			}
 
-			var klaim Cert
+			var klaim string
 			json.Unmarshal(vals, &klaim)
 
-			if(dt != ""){
-				if(name == key && klaim.Klaimdate == dt){
-					keys = append(keys, klaim.Insuarer+"-"+klaim.Klaimdate+"-"+klaim.Doctype+"-"+klaim.Dochash)
-				}
-			}else{
 				if(name == key){
-					keys = append(keys, klaim.Insuarer+"-"+klaim.Klaimdate+"-"+klaim.Doctype+"-"+klaim.Dochash)
+					keys = append(keys, klaim)
 				}
-			}
-
 
 		}
 
