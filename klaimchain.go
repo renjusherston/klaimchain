@@ -170,9 +170,8 @@ func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string
 
 			var klaim Cert
 			json.Unmarshal(vals, &klaim)
-			if klaim.Insuarer != "" && klaim.Dochash != key {
-				keys = append(keys, klaim.Insuarer+","+klaim.Klaimdate+","+klaim.Doctype+","+klaim.Dochash)
-			}
+			keys = append(keys, klaim.Insuarer+","+klaim.Klaimdate+","+klaim.Doctype+","+klaim.Dochash)
+
 
 
 		}
