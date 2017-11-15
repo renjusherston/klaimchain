@@ -144,7 +144,8 @@ func (t *KlaimChaincode) read(stub shim.ChaincodeStubInterface, args []string) (
 		}
 		defer keysIter.Close()
 
-		var keys []string
+		var keys []Cert
+
 		for keysIter.HasNext() {
 			key, _, iterErr := keysIter.Next()
 			if iterErr != nil {
@@ -159,7 +160,7 @@ func (t *KlaimChaincode) read(stub shim.ChaincodeStubInterface, args []string) (
 			json.Unmarshal(vals, &klaim)
 
 				if(klaim.Dochash == doc){
-					keys = append(keys, klaim.Insuarer+","+klaim.Klaimdate+","+klaim.Doctype+","+klaim.Dochash)
+					keys = append(keys, klaim)
 				}
 
 		}
@@ -189,7 +190,7 @@ func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string
 		}
 		defer keysIter.Close()
 
-		var keys []string
+		var keys []Cert
 		for keysIter.HasNext() {
 			key, _, iterErr := keysIter.Next()
 			if iterErr != nil {
@@ -205,11 +206,11 @@ func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string
 
 			if(dt != ""){
 				if(klaim.Insuarer == name && klaim.Klaimdate == dt){
-					keys = append(keys, klaim.Insuarer+","+klaim.Klaimdate+","+klaim.Doctype+","+klaim.Dochash)
+					keys = append(keys, klaim)
 				}
 			}else{
 				if(klaim.Insuarer == name){
-					keys = append(keys, klaim.Insuarer+","+klaim.Klaimdate+","+klaim.Doctype+","+klaim.Dochash)
+					keys = append(keys, klaim)
 				}
 			}
 
