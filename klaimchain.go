@@ -129,27 +129,14 @@ func (t *KlaimChaincode) Query(stub shim.ChaincodeStubInterface, function string
 // Read - read a variable from chaincode state
 // ============================================================================================================================
 func (t *KlaimChaincode) read(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	var name, jsonResp string
+	var doc string
 	var err error
 
 	if len(args) != 1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting name of the var to query")
 	}
 
-	name = strings.ToLower(args[0])
-	valAsbytes, err := stub.GetState(name)									//get the var from chaincode state
-	if err != nil {
-		jsonResp = "{\"Error\":\"Failed to get state for " + name + "\"}"
-		return nil, errors.New(jsonResp)
-	}
-
-	return valAsbytes, nil													//send it onward
-}
-
-// ============================================================================================================================
-// Read all - read all matching variable from chaincode state
-// ============================================================================================================================
-func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	doc = strings.ToLower(args[0])
 
 	keysIter, err := stub.RangeQueryState("", "")
 		if err != nil {
@@ -170,9 +157,61 @@ func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string
 
 			var klaim Cert
 			json.Unmarshal(vals, &klaim)
-			keys = append(keys, klaim.Insuarer+","+klaim.Klaimdate+","+klaim.Doctype+","+klaim.Dochash)
 
+				if(klaim.Dochash == doc){
+					keys = append(keys, klaim.Insuarer+","+klaim.Klaimdate+","+klaim.Doctype+","+klaim.Dochash)
+				}
 
+		}
+
+		jsonKeys, err := json.Marshal(keys)
+		if err != nil {
+			return nil, fmt.Errorf("keys operation failed. Error marshaling JSON: %s", err)
+		}
+
+		return jsonKeys, nil
+
+}
+
+// ============================================================================================================================
+// Read all - read all matching variable from chaincode state
+// ============================================================================================================================
+func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+
+	var name, dt string
+
+	name = strings.ToLower(args[0])
+	dt = strings.ToLower(args[1])
+
+	keysIter, err := stub.RangeQueryState("", "")
+		if err != nil {
+			return nil, fmt.Errorf("keys operation failed. Error accessing state: %s", err)
+		}
+		defer keysIter.Close()
+
+		var keys []string
+		for keysIter.HasNext() {
+			key, _, iterErr := keysIter.Next()
+			if iterErr != nil {
+				return nil, fmt.Errorf("keys operation failed. Error accessing state: %s", err)
+			}
+			vals, err := stub.GetState(key)
+			if err != nil {
+				return nil, fmt.Errorf("keys operation failed. Error accessing state: %s", err)
+			}
+
+			var klaim Cert
+			json.Unmarshal(vals, &klaim)
+
+			if(dt != ""){
+				if(klaim.Insuarer == name && klaim.Klaimdate == dt){
+					keys = append(keys, klaim.Insuarer+","+klaim.Klaimdate+","+klaim.Doctype+","+klaim.Dochash)
+				}
+			}else{
+				if(klaim.Insuarer == name){
+					keys = append(keys, klaim.Insuarer+","+klaim.Klaimdate+","+klaim.Doctype+","+klaim.Dochash)
+				}
+			}
 
 		}
 
@@ -192,6 +231,9 @@ func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string
 func (t *KlaimChaincode) init_cert(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
 
+	ctime := time.Now().UnixNano() / (int64(time.Millisecond)/int64(time.Nanosecond))
+
+
 	insuarer := strings.ToLower(args[0])
 	klaimdate := strings.ToLower(args[1])
 	doctype := strings.ToLower(args[2])
@@ -200,12 +242,7 @@ func (t *KlaimChaincode) init_cert(stub shim.ChaincodeStubInterface, args []stri
 	//build the cert json string manually
 	str := `{"insuarer": "` + insuarer + `", "klaimdate": "` + klaimdate + `", "doctype": "` + doctype + `", "dochash": "` + dochash + `"}`
 
-	err = stub.PutState(insuarer, []byte(str))									//store cert with user name as key
-	if err != nil {
-		return nil, err
-	}
-
-  err = stub.PutState(dochash, []byte(str))									//store  with cert as key
+	err = stub.PutState(strconv.FormatInt(ctime,10), []byte(str))									//store cert with user name as key
 	if err != nil {
 		return nil, err
 	}
