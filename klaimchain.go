@@ -237,7 +237,7 @@ func (t *KlaimChaincode) init_cert(stub shim.ChaincodeStubInterface, args []stri
 
 	insuarer := strings.ToLower(args[0])
 	klaimdate := strings.ToLower(args[1])
-	doctype := strings.ToLower(args[2])
+	doctype := args[2]
 	dochash := strings.ToLower(args[3])
 
 	//build the cert json string manually
