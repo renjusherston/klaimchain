@@ -22,6 +22,7 @@ var opentransStr = "_opentrans"				//name for the key/value that will store all 
 type Cert struct{
 	Claimant string `json:"claimant"`					//the fieldtags are needed to keep track klaim
 	Claimref string `json:"claimref"`
+	Blockrefid string `json:"blockrefid"`
 	Phone string `json:"phone"`
 	Email string `json:"email"`
 	Carnumber string `json:"carnumber"`
@@ -221,16 +222,17 @@ func (t *KlaimChaincode) init_cert(stub shim.ChaincodeStubInterface, args []stri
 
 	ctime := time.Now().UnixNano() / (int64(time.Millisecond)/int64(time.Nanosecond))
 
-	claimant := strings.ToLower(args[0])
-	claimref := strings.ToLower(args[1])
-	phone := strings.ToLower(args[2])
-	email := strings.ToLower(args[3])
-	carnumber := strings.ToLower(args[4])
-	accidentdate := strings.ToLower(args[5])
-	invoice := strings.ToLower(args[6])
+	claimref := strings.ToLower(args[0])
+	blockrefid := strings.ToLower(args[1])
+	claimant := strings.ToLower(args[2])
+	phone := strings.ToLower(args[3])
+	email := strings.ToLower(args[4])
+	carnumber := strings.ToLower(args[5])
+	accidentdate := strings.ToLower(args[6])
+	invoice := strings.ToLower(args[7])
 
 	//build the cert json string manually
-	str := `{"claimref": "` + claimref + `", "claimant": "` + claimant + `", "phone": "` + phone + `", "email": "` + email + `", "carnumber": "` + carnumber + `", "accidentdate": "` + accidentdate + `", "invoice": "` + invoice + `"}`
+	str := `{"claimref": "` + claimref + `", "blockrefid": "` + blockrefid + `", "claimant": "` + claimant + `", "phone": "` + phone + `", "email": "` + email + `", "carnumber": "` + carnumber + `", "accidentdate": "` + accidentdate + `", "invoice": "` + invoice + `"}`
 
 	err = stub.PutState(strconv.FormatInt(ctime,10), []byte(str))									//store cert with user name as key
 	if err != nil {
