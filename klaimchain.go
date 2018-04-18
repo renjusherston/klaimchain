@@ -223,12 +223,6 @@ func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string
 func (t *KlaimChaincode) validate(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var vecnumber, accdt, email string
 
-	var err error
-
-	if len(args) != 3 {
-		return nil, errors.New("Incorrect number of arguments. Expecting name of the var to query")
-	}
-
 	vecnumber = strings.ToLower(args[0])
 	accdt = strings.ToLower(args[1])
 	email = strings.ToLower(args[2])
@@ -258,8 +252,6 @@ func (t *KlaimChaincode) validate(stub shim.ChaincodeStubInterface, args []strin
 				return nil, errors.New("Duplicate claim")
 			}else if(klaim.Carnumber == vecnumber && klaim.Accidentdate == accdt){
 				keys = append(keys, klaim)
-			}else{
-				return nil, errors.New("No records found")
 			}
 		}
 
