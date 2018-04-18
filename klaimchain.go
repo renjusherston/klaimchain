@@ -107,6 +107,8 @@ func (t *KlaimChaincode) Query(stub shim.ChaincodeStubInterface, function string
 		return t.read(stub, args)
 	} else if function == "readAll" {
 		return t.readAll(stub, args)
+	} else if function == "validate" {													//read a variable
+		return t.validate(stub, args)
 	}
 
 	return nil, errors.New("Received unknown function query")
@@ -211,6 +213,62 @@ func (t *KlaimChaincode) readAll(stub shim.ChaincodeStubInterface, args []string
 
 		return jsonKeys, nil
 
+
+}
+
+
+// ============================================================================================================================
+// Validate - validate a variable from chaincode state
+// ============================================================================================================================
+func (t *KlaimChaincode) validate(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	var vecnumber, accdt, email string
+
+	var err error
+
+	if len(args) != 3 {
+		return nil, errors.New("Incorrect number of arguments. Expecting name of the var to query")
+	}
+
+	vecnumber = strings.ToLower(args[0])
+	accdt = strings.ToLower(args[1])
+	email = strings.ToLower(args[2])
+
+	keysIter, err := stub.RangeQueryState("", "")
+		if err != nil {
+			return nil, fmt.Errorf("keys operation failed. Error accessing state: %s", err)
+		}
+		defer keysIter.Close()
+
+		var keys []Cert
+
+		for keysIter.HasNext() {
+			key, _, iterErr := keysIter.Next()
+			if iterErr != nil {
+				return nil, fmt.Errorf("keys operation failed. Error accessing state: %s", err)
+			}
+			vals, err := stub.GetState(key)
+			if err != nil {
+				return nil, fmt.Errorf("keys operation failed. Error accessing state: %s", err)
+			}
+
+			var klaim Cert
+			json.Unmarshal(vals, &klaim)
+
+			if(klaim.Carnumber == vecnumber && klaim.Accidentdate == accdt && klaim.Email == email){
+				return nil, errors.New("Duplicate claim")
+			}else if(klaim.Carnumber == vecnumber && klaim.Accidentdate == accdt){
+				keys = append(keys, klaim)
+			}else{
+				return nil, errors.New("No records found")
+			}
+		}
+
+		jsonKeys, err := json.Marshal(keys)
+		if err != nil {
+			return nil, fmt.Errorf("keys operation failed. Error marshaling JSON: %s", err)
+		}
+
+		return jsonKeys, nil
 
 }
 
