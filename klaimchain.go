@@ -27,6 +27,10 @@ type Cert struct{
 	Email string `json:"email"`
 	Carnumber string `json:"carnumber"`
 	Accidentdate string `json:"accidentdate"`
+}
+
+type Invoice struct{
+	Claimref string `json:"claimref"`
 	Invoice string `json:"invoice"`
 }
 
@@ -92,6 +96,9 @@ func (t *KlaimChaincode) Invoke(stub shim.ChaincodeStubInterface, function strin
 	} else if function == "init_cert" {									//create a new  klaim
 		res, err := t.init_cert(stub, args)
 		return res, err
+	} else if function == "init_invoice" {									//create a new  klaim
+		res, err := t.init_invoice(stub, args)
+		return res, err
 	}
 
 	return nil, errors.New("Received unknown function invocation")
@@ -118,14 +125,14 @@ func (t *KlaimChaincode) Query(stub shim.ChaincodeStubInterface, function string
 // Read - read a variable from chaincode state
 // ============================================================================================================================
 func (t *KlaimChaincode) read(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	var doc string
+	var blockid string
 	var err error
 
 	if len(args) != 1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting name of the var to query")
 	}
 
-	doc = strings.ToLower(args[0])
+	blockid = strings.ToLower(args[0])
 
 	keysIter, err := stub.RangeQueryState("", "")
 		if err != nil {
@@ -148,7 +155,7 @@ func (t *KlaimChaincode) read(stub shim.ChaincodeStubInterface, args []string) (
 			var klaim Cert
 			json.Unmarshal(vals, &klaim)
 
-				if(klaim.Invoice == doc){
+				if(klaim.Blockrefid == blockid){
 					keys = append(keys, klaim)
 				}
 
@@ -249,8 +256,8 @@ func (t *KlaimChaincode) validate(stub shim.ChaincodeStubInterface, args []strin
 			json.Unmarshal(vals, &klaim)
 
 			if(klaim.Carnumber == vecnumber && klaim.Accidentdate == accdt && klaim.Email == email){
-				return nil, errors.New("Duplicate claim")
-			}else if(klaim.Carnumber == vecnumber && klaim.Accidentdate == accdt){
+				keys = append(keys, klaim)
+			}else if(klaim.Carnumber == vecnumber && klaim.Accidentdate == accdt && klaim.Email != email){
 				keys = append(keys, klaim)
 			}
 		}
@@ -279,10 +286,31 @@ func (t *KlaimChaincode) init_cert(stub shim.ChaincodeStubInterface, args []stri
 	email := strings.ToLower(args[4])
 	carnumber := strings.ToLower(args[5])
 	accidentdate := strings.ToLower(args[6])
-	invoice := strings.ToLower(args[7])
 
 	//build the cert json string manually
-	str := `{"claimref": "` + claimref + `", "blockrefid": "` + blockrefid + `", "claimant": "` + claimant + `", "phone": "` + phone + `", "email": "` + email + `", "carnumber": "` + carnumber + `", "accidentdate": "` + accidentdate + `", "invoice": "` + invoice + `"}`
+	str := `{"claimref": "` + claimref + `", "blockrefid": "` + blockrefid + `", "claimant": "` + claimant + `", "phone": "` + phone + `", "email": "` + email + `", "carnumber": "` + carnumber + `", "accidentdate": "` + accidentdate + `"}`
+
+	err = stub.PutState(strconv.FormatInt(ctime,10), []byte(str))									//store cert with user name as key
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// ============================================================================================================================
+// Init invoice - create a invoice entry, store into chaincode state
+// ============================================================================================================================
+func (t *KlaimChaincode) init_invoice(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	var err error
+
+	ctime := time.Now().UnixNano() / (int64(time.Millisecond)/int64(time.Nanosecond))
+
+	claimref := strings.ToLower(args[0])
+	invoice := strings.ToLower(args[1])
+
+	//build the cert json string manually
+	str := `{"claimref": "` + claimref + `", "invoice": "` + invoice + `"}`
 
 	err = stub.PutState(strconv.FormatInt(ctime,10), []byte(str))									//store cert with user name as key
 	if err != nil {
