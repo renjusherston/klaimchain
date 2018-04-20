@@ -116,6 +116,8 @@ func (t *KlaimChaincode) Query(stub shim.ChaincodeStubInterface, function string
 		return t.readAll(stub, args)
 	} else if function == "validate" {													//read a variable
 		return t.validate(stub, args)
+	} else if function == "validateinvoice" {													//read a variable
+		return t.validateinvoice(stub, args)
 	}
 
 	return nil, errors.New("Received unknown function query")
@@ -260,6 +262,51 @@ func (t *KlaimChaincode) validate(stub shim.ChaincodeStubInterface, args []strin
 			}else if(klaim.Carnumber == vecnumber && klaim.Accidentdate == accdt && klaim.Email != email){
 				keys = append(keys, klaim)
 			}
+		}
+
+		jsonKeys, err := json.Marshal(keys)
+		if err != nil {
+			return nil, fmt.Errorf("keys operation failed. Error marshaling JSON: %s", err)
+		}
+
+		return jsonKeys, nil
+
+}
+
+// ============================================================================================================================
+// Validate - validate invoice from chaincode state
+// ============================================================================================================================
+func (t *KlaimChaincode) validateinvoice(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	var invoice string
+
+	invoice = strings.ToLower(args[0])
+
+
+	keysIter, err := stub.RangeQueryState("", "")
+		if err != nil {
+			return nil, fmt.Errorf("keys operation failed. Error accessing state: %s", err)
+		}
+		defer keysIter.Close()
+
+		var keys []Invoice
+
+		for keysIter.HasNext() {
+			key, _, iterErr := keysIter.Next()
+			if iterErr != nil {
+				return nil, fmt.Errorf("keys operation failed. Error accessing state: %s", err)
+			}
+			vals, err := stub.GetState(key)
+			if err != nil {
+				return nil, fmt.Errorf("keys operation failed. Error accessing state: %s", err)
+			}
+
+			var klaim Invoice
+			json.Unmarshal(vals, &klaim)
+
+				if(klaim.Invoice == invoice){
+					keys = append(keys, klaim)
+				}
+
 		}
 
 		jsonKeys, err := json.Marshal(keys)
