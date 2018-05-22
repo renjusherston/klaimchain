@@ -22,6 +22,7 @@ var opentransStr = "_opentrans"				//name for the key/value that will store all 
 type Cert struct{
 	Claimant string `json:"claimant"`					//the fieldtags are needed to keep track klaim
 	Claimref string `json:"claimref"`
+	Policyno string `json:"policyno"`
 	Blockrefid string `json:"blockrefid"`
 	Phone string `json:"phone"`
 	Email string `json:"email"`
@@ -333,9 +334,10 @@ func (t *KlaimChaincode) init_cert(stub shim.ChaincodeStubInterface, args []stri
 	email := strings.ToLower(args[4])
 	carnumber := strings.ToLower(args[5])
 	accidentdate := strings.ToLower(args[6])
+	policyno := strings.ToLower(args[7])
 
 	//build the cert json string manually
-	str := `{"claimref": "` + claimref + `", "blockrefid": "` + blockrefid + `", "claimant": "` + claimant + `", "phone": "` + phone + `", "email": "` + email + `", "carnumber": "` + carnumber + `", "accidentdate": "` + accidentdate + `"}`
+	str := `{"claimref": "` + claimref + `", "policyno": "` + policyno + `", "blockrefid": "` + blockrefid + `", "claimant": "` + claimant + `", "phone": "` + phone + `", "email": "` + email + `", "carnumber": "` + carnumber + `", "accidentdate": "` + accidentdate + `"}`
 
 	err = stub.PutState(strconv.FormatInt(ctime,10), []byte(str))									//store cert with user name as key
 	if err != nil {
