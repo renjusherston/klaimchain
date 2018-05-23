@@ -132,7 +132,7 @@ func (t *KlaimChaincode) read(stub shim.ChaincodeStubInterface, args []string) (
 	var err error
 
 	if len(args) != 1 {
-		return nil, errors.New("Incorrect number of arguments. Expecting name of the var to query")
+		return nil, errors.New("Incorrect number of arguments.")
 	}
 
 	blockid = strings.ToLower(args[0])
@@ -279,8 +279,15 @@ func (t *KlaimChaincode) validate(stub shim.ChaincodeStubInterface, args []strin
 // ============================================================================================================================
 func (t *KlaimChaincode) validateinvoice(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var invoice string
+	if len(args) != 1 {
+		return nil, errors.New("Incorrect number of arguments.")
+	}
 
 	invoice = strings.ToLower(args[0])
+
+	if invoice == "" {
+		return nil, errors.New("Invoice is missing")
+	}
 
 
 	keysIter, err := stub.RangeQueryState("", "")
